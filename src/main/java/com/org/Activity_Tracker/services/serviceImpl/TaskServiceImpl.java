@@ -23,8 +23,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class TaskServiceImpl implements TaskService {
+
     private final TaskRepository taskRepository;
-    private final ResponseManager responseManager;
 
 
 //    ===========================CREATE TASK=============================================
@@ -32,7 +32,6 @@ public class TaskServiceImpl implements TaskService {
     public String createTask(TaskRequestDto request, HttpSession session) {
 
         User user = (User) session.getAttribute("currUser");
-
         if(user != null) {
             Task task = Task.builder()
                     .user(user)
@@ -41,6 +40,7 @@ public class TaskServiceImpl implements TaskService {
                     .status(Status.valueOf("PENDING")).build();
 
             taskRepository.save(task);
+
             return "Task created successfully";
         }
         throw new UserNotFoundException("Login to create a tasks", "No user in session");
@@ -162,9 +162,22 @@ public class TaskServiceImpl implements TaskService {
         if(request.getStatus().equalsIgnoreCase("done")){
             task.setCompletedAt(new Date());
         }
-        Task updated = taskRepository.saveAndFlush(task);
-
-        System.out.println("UPDATED:: "+ updated.toString());
+        taskRepository.save(task);
         return "Task status updated successfully";
+    }
+
+
+    public List<TaskResponseDto> searchTask(String query){
+
+        List<Task> matchingTasks = taskRepository.searchByTitleOrDescription(query);
+
+        return matchingTasks.stream()
+                .map(task -> TaskResponseDto.builder()
+                        .title(task.getTitle())
+                        .description(task.getDescription())
+                        .status(task.getStatus())
+                        .build()
+                )
+                .toList();
     }
 }

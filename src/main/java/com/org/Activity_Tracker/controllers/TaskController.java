@@ -8,6 +8,7 @@ import com.org.Activity_Tracker.services.TaskService;
 import com.org.Activity_Tracker.utils.ResponseManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
@@ -85,6 +86,12 @@ public class TaskController {
     public ApiResponse<Object> updateStatus(@Valid @RequestBody TaskRequestDto request, @PathVariable Long task_id){
         String response = taskService.updateTaskStatus(request, task_id);
         return new ResponseManager().success(response, HttpStatus.OK);
+    }
+
+    @GetMapping("/search")
+    public ApiResponse<Object> searchTask(@RequestParam String query){
+        List<TaskResponseDto> results = taskService.searchTask(query);
+        return new ResponseManager().success(results, HttpStatus.OK);
     }
 
 }
