@@ -32,7 +32,6 @@ public class TaskServiceImpl implements TaskService {
     public String createTask(TaskRequestDto request, HttpSession session) {
 
         User user = (User) session.getAttribute("currUser");
-//        System.out.println("USER:::: " + user);
         if(user != null) {
             Task task = Task.builder()
                     .user(user)
@@ -40,9 +39,8 @@ public class TaskServiceImpl implements TaskService {
                     .description(request.getDescription())
                     .status(Status.valueOf("PENDING")).build();
 
-            Task savedTask = taskRepository.save(task);
+            taskRepository.save(task);
 
-            System.out.println("Saved:: " + savedTask);
             return "Task created successfully";
         }
         throw new UserNotFoundException("Login to create a tasks", "No user in session");
@@ -96,7 +94,7 @@ public class TaskServiceImpl implements TaskService {
                         "Task not found", "Provide a valid task Id"));
 
         task.setTitle(request.getTitle());
-         Task updatedTask = taskRepository.save(task);
+        taskRepository.save(task);
 
         return "Task updated sucessfully";
     }
