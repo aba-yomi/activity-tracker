@@ -29,13 +29,11 @@ public class TaskServiceImpl implements TaskService {
 
 //    ===========================CREATE TASK=============================================
     @Override
-    public String createTask(TaskRequestDto request, HttpSession session) {
-
-        User user = (User) session.getAttribute("currUser");
+    public String createTask(TaskRequestDto request, String user) {
 
         if(user != null) {
             Task task = Task.builder()
-                    .user(user)
+                    .user("user")
                     .title(request.getTitle())
                     .description(request.getDescription())
                     .status(Status.valueOf("PENDING")).build();
@@ -51,22 +49,22 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public Object viewAllTask(HttpSession session) {
 
-        User user = (User) session.getAttribute("currUser");
-
-        if(user != null) {
-            List<Task> tasks = user.getTasks();
-            List<TaskResponseDto> taskList = new ArrayList<>();
-            tasks.forEach(task -> {
-
-                TaskResponseDto response = TaskResponseDto.builder()
-                        .title(task.getTitle())
-                        .description(task.getDescription())
-                        .status(task.getStatus())
-                        .build();
-                taskList.add(response);
-            });
-            return taskList;
-        }
+//        User user = (User) session.getAttribute("currUser");
+//
+//        if(user != null) {
+//            List<Task> tasks = user.getTasks();
+//            List<TaskResponseDto> taskList = new ArrayList<>();
+//            tasks.forEach(task -> {
+//
+//                TaskResponseDto response = TaskResponseDto.builder()
+//                        .title(task.getTitle())
+//                        .description(task.getDescription())
+//                        .status(task.getStatus())
+//                        .build();
+//                taskList.add(response);
+//            });
+//            return taskList;
+//        }
         throw new UserNotFoundException("Login to view your tasks", "No user in session");
     }
 
@@ -132,7 +130,7 @@ public class TaskServiceImpl implements TaskService {
 
     public List<TaskResponseDto> viewTaskByStatus(String status, HttpSession session){
         User user = (User) session.getAttribute("currUser");
-        List<Task> tasks = user.getTasks();
+        List<Task> tasks = new ArrayList<>();
 
         List<TaskResponseDto> responses = new ArrayList<>();
         tasks.forEach(task ->{

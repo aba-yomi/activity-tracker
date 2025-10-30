@@ -1,12 +1,10 @@
 package com.org.Activity_Tracker.serviceImpl;
 
-import com.org.Activity_Tracker.enums.Gender;
+import com.org.Activity_Tracker.enums.Role;
 import com.org.Activity_Tracker.services.TaskService;
-import com.org.Activity_Tracker.services.UserService;
 import com.org.Activity_Tracker.entities.Task;
 import com.org.Activity_Tracker.entities.User;
 import com.org.Activity_Tracker.enums.Status;
-import com.org.Activity_Tracker.pojos.LoginRequest;
 import com.org.Activity_Tracker.pojos.TaskRequestDto;
 import com.org.Activity_Tracker.pojos.TaskResponseDto;
 import com.org.Activity_Tracker.repositories.TaskRepository;
@@ -15,14 +13,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpSession;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -34,7 +31,6 @@ class TaskServiceImplTest {
     @Autowired UserRepository userRepository;
     @Autowired TaskRepository taskRepository;
     @Autowired TaskService taskService;
-    @Autowired UserService userService;
     @Autowired HttpSession session;
 
     private User testUser;
@@ -44,12 +40,12 @@ class TaskServiceImplTest {
     void setup() {
         testUser = userRepository.findByEmail("musty@example.com")
                 .orElseGet(() -> userRepository.save(
-                        new User("musty", "musty@example.com", "1234", Gender.MALE)
+                        new User("musty", "musty@example.com", "1234", Set.of(Role.ROLE_USER))
                 ));
 
         session.setAttribute("currUser", testUser);
 
-        existingTask = new Task("Initial Task", "Sample description", Status.PENDING, testUser);
+        existingTask = new Task("Initial Task", "Sample description", Status.PENDING, "testUser");
         existingTask = taskRepository.save(existingTask);
     }
 
@@ -60,7 +56,7 @@ class TaskServiceImplTest {
         dto.setTitle("Yom");
         dto.setDescription("Have a talk with him");
 
-        taskService.createTask(dto, session);
+        taskService.createTask(dto, "session");
 
         List<Task> tasks = taskRepository.findAll();
         assertTrue(tasks.stream().anyMatch(t -> t.getTitle().equals("Yom")));

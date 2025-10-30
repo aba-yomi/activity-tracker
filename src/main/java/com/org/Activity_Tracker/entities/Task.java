@@ -45,11 +45,10 @@ public class Task {
     @Column(name = "completedAt")
     private Date completedAt;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    @Column(name = "username")
+    private String user;
 
-    public Task(String title, String description, Status status, User user) {
+    public Task(String title, String description, Status status, String user) {
         this.title = title;
         this.description = description;
         this.status = status;

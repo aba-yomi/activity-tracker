@@ -2,65 +2,44 @@ package com.org.Activity_Tracker.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.org.Activity_Tracker.enums.Gender;
+import com.org.Activity_Tracker.enums.Role;
 import lombok.*;
 
 import javax.persistence.*;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 
-@Entity
 @Builder
 @AllArgsConstructor
-@NoArgsConstructor
+//@NoArgsConstructor
 @Getter
 @Setter
+@Entity
 @Table(name = "users")
 public class User {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name="username", nullable = false, unique = true)
+    @Column(unique = true, nullable = false)
     private String username;
 
-    @Column(name="email", nullable = false, unique = true)
+    @Column(unique = true, nullable = false)
     private String email;
 
-    @Column(name="password", nullable = false)
+    @Column(nullable = false)
     private String password;
 
-    @Column(name="gender", nullable = false)
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
-    private Gender gender;
+    private Set<Role> roles;
 
-    @JsonIgnore
-    @Column(name="createdAt", nullable = false)
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date created_At;
-
-    @JsonIgnore
-    @Column(name="updatedAt")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date updated_At;
-
-    @JsonIgnore
-    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
-    private List<Task> tasks;
-
-
-    @PrePersist
-    public void createdAt(){created_At = new Date();}
-
-    @PreUpdate
-    public void updatedAt(){updated_At = new Date();}
-
-
-    public User(String username, String email, String password, Gender gender) {
-        this.username = username;
-        this.email = email;
-        this.password = password;
-        this.gender = gender;
+    // constructors, getters, setters
+    public User() {}
+    public User(String username, String email, String password, Set<com.org.Activity_Tracker.enums.Role> roles) {
+        this.username = username; this.email = email; this.password = password; this.roles = roles;
     }
+    // getters and setters omitted for brevity
 }

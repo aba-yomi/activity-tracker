@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface TaskService {
 
-    String createTask(TaskRequestDto request, HttpSession session);
+    String createTask(TaskRequestDto request, String username);
 
     Object viewAllTask(HttpSession session);
 

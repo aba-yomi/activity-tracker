@@ -1,6 +1,7 @@
 package com.org.Activity_Tracker.controllers;
 
 
+import com.org.Activity_Tracker.security.JwtTokenProvider;
 import com.org.Activity_Tracker.services.TaskService;
 import com.org.Activity_Tracker.utils.ResponseManager;
 import com.org.Activity_Tracker.pojos.ApiResponse;
@@ -9,6 +10,7 @@ import com.org.Activity_Tracker.pojos.TaskResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
@@ -20,24 +22,44 @@ import java.util.List;
 public class TaskController {
 
     private final TaskService taskService;
-    private final HttpSession session;
+//    private final HttpSession session;
+
+    private final JwtTokenProvider provider;
 
     //==========================CREATE TASK=======================================================
 
     @PostMapping("/create")
-    public ApiResponse<Object>  createTask(@Valid @RequestBody TaskRequestDto request){
-        String response = taskService.createTask(request, session);
+    public ApiResponse<Object> createTask(
+            @Valid @RequestBody TaskRequestDto request,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
+
+        String token = extractToken(authorizationHeader);
+        if (token == null || !provider.validateToken(token)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or missing token");
+        }
+
+        String username = provider.getUsernameFromJwt(token);
+        String response = taskService.createTask(request, username);
         return new ResponseManager().success(response, HttpStatus.CREATED);
+    }
+
+    private String extractToken(String header) {
+        if (header == null) return null;
+        header = header.trim();
+        if (header.startsWith("Bearer ")) {
+            return header.substring(7).trim();
+        }
+        return null;
     }
 
 
     //==========================VIEW ALL TASK=======================================================
 
-    @GetMapping("/view-all")
-    public ApiResponse<Object> getAllTask(){
-        Object response = taskService.viewAllTask(session);
-        return new ResponseManager().success(response, HttpStatus.FOUND);
-    }
+//    @GetMapping("/view-all")
+//    public ApiResponse<Object> getAllTask(){
+//        Object response = taskService.viewAllTask(session);
+//        return new ResponseManager().success(response, HttpStatus.FOUND);
+//    }
 
 
     //==========================VIEW TASK BY ID=======================================================
@@ -60,11 +82,11 @@ public class TaskController {
 
     //==========================VIEW TASK BY STATUS=======================================================
 
-    @GetMapping("/view/{status}")
-    public ApiResponse<Object> viewTaskByStatus(@PathVariable String status){
-        List<TaskResponseDto> response = taskService.viewTaskByStatus(status, session);
-        return new ResponseManager().success(response, HttpStatus.FOUND);
-    }
+//    @GetMapping("/view/{status}")
+//    public ApiResponse<Object> viewTaskByStatus(@PathVariable String status){
+//        List<TaskResponseDto> response = taskService.viewTaskByStatus(status, session);
+//        return new ResponseManager().success(response, HttpStatus.FOUND);
+//    }
 
     //==========================EDIT TASK TITLE=======================================================
     @PatchMapping("/edit-title/{task_id}")
