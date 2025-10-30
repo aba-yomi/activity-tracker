@@ -1,6 +1,7 @@
 package com.org.Activity_Tracker.controllers;
 
 
+import com.org.Activity_Tracker.entities.User;
 import com.org.Activity_Tracker.services.UserService;
 import com.org.Activity_Tracker.utils.ResponseManager;
 import com.org.Activity_Tracker.pojos.ApiResponse;
@@ -23,7 +24,11 @@ public class UserController {
 
     @PostMapping("/register")
     public ApiResponse<Object> register_user(@Valid @RequestBody RegistrationRequest request){
-        String response = userService.createUser(request);
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setPassword(request.getPassword());
+        user.setEmail(request.getEmail());
+        String response = userService.createUser(user);
         return new ResponseManager().success(response, HttpStatus.CREATED);
     }
 
