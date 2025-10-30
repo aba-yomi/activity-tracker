@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.annotation.DirtiesContext;
 
 import javax.servlet.http.HttpSession;
@@ -27,6 +28,9 @@ class UserServiceImplTest {
     private UserService userService;
     @Autowired
     private HttpSession session;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
 
     @BeforeEach
     void cleanUp() {
@@ -37,16 +41,22 @@ class UserServiceImplTest {
     @Test
     void createUser() {
         User user = new User("yo", "yo@gmail.com", "1234", Gender.MALE);
-        userRepository.save(user);
+        userService.createUser(user);
 
-        Optional<User> found = userRepository.findUserByUsernameAndPassword("yo", "1234");
+        Optional<User> found = userRepository.findByUsername("yo");
         assertTrue(found.isPresent());
         assertEquals("yo", found.get().getUsername());
+
+        String storedPassword = found.get().getPassword();
+        assertNotNull(storedPassword);
+        assertNotEquals("1234", storedPassword, "Password should be stored encoded, not plaintext");
+        assertTrue(passwordEncoder.matches("1234", storedPassword), "Encoded password must match the raw password");
     }
 
     @Test
     void userLogin() {
-        userRepository.save(new User("yom", "yom@gmail.com", "1234", Gender.MALE));
+        // create user via service (password encoded)
+        userService.createUser(new User("yom", "yom@gmail.com", "1234", Gender.MALE));
 
         LoginRequest request = new LoginRequest();
         request.setUsername("yom");
@@ -61,7 +71,8 @@ class UserServiceImplTest {
 
     @Test
     void userLogout() {
-        userRepository.save(new User("yom", "yom@gmail.com", "1234", Gender.MALE));
+        // create user via service (password encoded)
+        userService.createUser(new User("yom", "yom@gmail.com", "1234", Gender.MALE));
 
         LoginRequest request = new LoginRequest();
         request.setUsername("yom");

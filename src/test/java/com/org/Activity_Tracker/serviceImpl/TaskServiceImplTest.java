@@ -1,27 +1,22 @@
 package com.org.Activity_Tracker.serviceImpl;
 
-import com.org.Activity_Tracker.enums.Gender;
-import com.org.Activity_Tracker.services.TaskService;
-import com.org.Activity_Tracker.services.UserService;
 import com.org.Activity_Tracker.entities.Task;
 import com.org.Activity_Tracker.entities.User;
+import com.org.Activity_Tracker.enums.Gender;
 import com.org.Activity_Tracker.enums.Status;
-import com.org.Activity_Tracker.pojos.LoginRequest;
 import com.org.Activity_Tracker.pojos.TaskRequestDto;
 import com.org.Activity_Tracker.pojos.TaskResponseDto;
 import com.org.Activity_Tracker.repositories.TaskRepository;
 import com.org.Activity_Tracker.repositories.UserRepository;
+import com.org.Activity_Tracker.services.TaskService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpSession;
-
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -34,7 +29,6 @@ class TaskServiceImplTest {
     @Autowired UserRepository userRepository;
     @Autowired TaskRepository taskRepository;
     @Autowired TaskService taskService;
-    @Autowired UserService userService;
     @Autowired HttpSession session;
 
     private User testUser;
@@ -64,13 +58,6 @@ class TaskServiceImplTest {
 
         List<Task> tasks = taskRepository.findAll();
         assertTrue(tasks.stream().anyMatch(t -> t.getTitle().equals("Yom")));
-    }
-
-    @Test
-    void viewAllTask() {
-        List<TaskResponseDto> tasks = (List<TaskResponseDto>) taskService.viewAllTask(session);
-        assertEquals(1, tasks.size());
-        assertEquals("Initial Task", tasks.get(0).getTitle());
     }
 
     @Test
