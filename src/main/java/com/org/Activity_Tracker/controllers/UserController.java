@@ -2,6 +2,7 @@ package com.org.Activity_Tracker.controllers;
 
 
 import com.org.Activity_Tracker.entities.User;
+import com.org.Activity_Tracker.enums.Gender;
 import com.org.Activity_Tracker.services.UserService;
 import com.org.Activity_Tracker.utils.ResponseManager;
 import com.org.Activity_Tracker.pojos.ApiResponse;
@@ -16,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.validation.Valid;
 
 @RestController
-@RequestMapping("/api/v1/user")
+@RequestMapping("/api/v1/user/")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -28,6 +29,7 @@ public class UserController {
         user.setUsername(request.getUsername());
         user.setPassword(request.getPassword());
         user.setEmail(request.getEmail());
+        user.setGender(Gender.valueOf(request.getGender()));
         String response = userService.createUser(user);
         return new ResponseManager().success(response, HttpStatus.CREATED);
     }

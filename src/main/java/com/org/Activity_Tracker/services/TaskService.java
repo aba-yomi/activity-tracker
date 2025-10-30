@@ -25,4 +25,5 @@ public interface TaskService {
 
     String updateTaskStatus (TaskRequestDto request, Long task_id);
 
+    List<TaskResponseDto> searchTask (String query);
 }

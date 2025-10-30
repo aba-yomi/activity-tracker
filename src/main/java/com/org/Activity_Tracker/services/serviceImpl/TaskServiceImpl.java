@@ -23,8 +23,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class TaskServiceImpl implements TaskService {
+
     private final TaskRepository taskRepository;
-    private final ResponseManager responseManager;
 
 
 //    ===========================CREATE TASK=============================================
@@ -32,7 +32,7 @@ public class TaskServiceImpl implements TaskService {
     public String createTask(TaskRequestDto request, HttpSession session) {
 
         User user = (User) session.getAttribute("currUser");
-
+//        System.out.println("USER:::: " + user);
         if(user != null) {
             Task task = Task.builder()
                     .user(user)
@@ -40,7 +40,9 @@ public class TaskServiceImpl implements TaskService {
                     .description(request.getDescription())
                     .status(Status.valueOf("PENDING")).build();
 
-            taskRepository.save(task);
+            Task savedTask = taskRepository.save(task);
+
+            System.out.println("Saved:: " + savedTask);
             return "Task created successfully";
         }
         throw new UserNotFoundException("Login to create a tasks", "No user in session");
@@ -94,7 +96,7 @@ public class TaskServiceImpl implements TaskService {
                         "Task not found", "Provide a valid task Id"));
 
         task.setTitle(request.getTitle());
-        taskRepository.save(task);
+         Task updatedTask = taskRepository.save(task);
 
         return "Task updated sucessfully";
     }
@@ -162,9 +164,22 @@ public class TaskServiceImpl implements TaskService {
         if(request.getStatus().equalsIgnoreCase("done")){
             task.setCompletedAt(new Date());
         }
-        Task updated = taskRepository.saveAndFlush(task);
-
-        System.out.println("UPDATED:: "+ updated.toString());
+        taskRepository.save(task);
         return "Task status updated successfully";
+    }
+
+
+    public List<TaskResponseDto> searchTask(String query){
+
+        List<Task> matchingTasks = taskRepository.searchByTitleOrDescription(query);
+
+        return matchingTasks.stream()
+                .map(task -> TaskResponseDto.builder()
+                        .title(task.getTitle())
+                        .description(task.getDescription())
+                        .status(task.getStatus())
+                        .build()
+                )
+                .toList();
     }
 }

@@ -56,6 +56,14 @@ public class Task {
         this.user = user;
     }
 
+    public Task(Long id, String title, String description, Status status, User user) {
+        this.id = id;
+        this.title = title;
+        this.description = description;
+        this.status = status;
+        this.user = user;
+    }
+
 
     @PrePersist
     public void createdAt(){
