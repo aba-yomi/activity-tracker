@@ -3,6 +3,7 @@ package com.org.Activity_Tracker.serviceImpl;
 import com.org.Activity_Tracker.entities.Task;
 import com.org.Activity_Tracker.entities.User;
 import com.org.Activity_Tracker.enums.Status;
+import com.org.Activity_Tracker.exceptions.ResourceNotFoundException;
 import com.org.Activity_Tracker.pojos.TaskRequestDto;
 import com.org.Activity_Tracker.pojos.TaskResponseDto;
 import com.org.Activity_Tracker.repositories.TaskRepository;
@@ -82,7 +83,9 @@ class TaskServiceImplTest {
 
         when(taskRepository.findById(1L)).thenReturn(Optional.of(existingTask));
 
-        TaskResponseDto response = (TaskResponseDto) taskService.viewTaskById(1L);
+        when(session.getAttribute("currUser")).thenReturn(user);
+
+        TaskResponseDto response = (TaskResponseDto) taskService.viewTaskById(1L, session);
 
         assertNotNull(response);
         assertEquals("Initial Task", response.getTitle());
@@ -101,7 +104,9 @@ class TaskServiceImplTest {
         when(taskRepository.findById(existingTask.getId())).thenReturn(Optional.of(existingTask));
         when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        String result =  taskService.edit_taskTitle(dto, existingTask.getId());
+        when(session.getAttribute("currUser")).thenReturn(user);
+
+        String result =  taskService.edit_taskTitle(dto, existingTask.getId(), session);
 
         assertEquals("Task updated sucessfully", result);
         verify(taskRepository).save(existingTask);
@@ -117,7 +122,9 @@ class TaskServiceImplTest {
         when(taskRepository.findById(existingTask.getId())).thenReturn(Optional.of(existingTask));
         when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        String result = taskService.edit_taskDescription(dto, existingTask.getId());
+        when(session.getAttribute("currUser")).thenReturn(user);
+
+        String result = taskService.edit_taskDescription(dto, existingTask.getId(), session);
 
         assertEquals("Task updated sucessfully", result);
         verify(taskRepository).save(existingTask);
@@ -133,7 +140,9 @@ class TaskServiceImplTest {
         when(taskRepository.findById(existingTask.getId())).thenReturn(Optional.of(existingTask));
         when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        String result = taskService.updateTaskStatus(dto, existingTask.getId());
+        when(session.getAttribute("currUser")).thenReturn(user);
+
+        String result = taskService.updateTaskStatus(dto, existingTask.getId(), session);
 
         assertEquals("Task status updated successfully", result);
         verify(taskRepository).save(existingTask);
@@ -147,7 +156,9 @@ class TaskServiceImplTest {
         when(taskRepository.findById(existingTask.getId())).thenReturn(Optional.of(existingTask));
         doNothing().when(taskRepository).delete(existingTask);
 
-        taskService.deleteTask(existingTask.getId());
+        when(session.getAttribute("currUser")).thenReturn(user);
+
+        taskService.deleteTask(existingTask.getId(), session);
 
         verify(taskRepository).findById(existingTask.getId());
         verify(taskRepository).delete(existingTask);
@@ -155,13 +166,17 @@ class TaskServiceImplTest {
 
     @Test
     void shouldReturnMappedDtos_WhenTasksMatchQuery() {
-        Task task1 = new Task( "Title1", "Description1", Status.DONE, createTestUser());
-        Task task2 = new Task("Title2", "Description2", Status.IN_PROGRESS, createTestUser());
+        User owner = createTestUser();
+        owner.setId(1L);
+
+        Task task1 = new Task( "Title1", "Description1", Status.DONE, owner);
+        Task task2 = new Task("Title2", "Description2", Status.IN_PROGRESS, owner);
         List<Task> tasks = List.of(task1, task2);
 
-        when(taskRepository.searchByTitleOrDescription("Title")).thenReturn(tasks);
+        when(session.getAttribute("currUser")).thenReturn(owner);
+        when(taskRepository.searchByTitleOrDescriptionAndUserId("Title", owner.getId())).thenReturn(tasks);
 
-        List<TaskResponseDto> result = taskService.searchTask("Title");
+        List<TaskResponseDto> result = taskService.searchTask("Title", session);
 
         assertEquals(2, result.size());
 
@@ -173,38 +188,230 @@ class TaskServiceImplTest {
         assertEquals("Description2", result.get(1).getDescription());
         assertEquals(Status.IN_PROGRESS, result.get(1).getStatus());
 
-        verify(taskRepository).searchByTitleOrDescription("Title");
+        verify(taskRepository).searchByTitleOrDescriptionAndUserId("Title", owner.getId());
     }
 
     @Test
     void shouldReturnEmptyList_WhenNoTasksFound() {
-        when(taskRepository.searchByTitleOrDescription("nonexistent"))
+        User owner = createTestUser();
+        owner.setId(1L);
+
+        when(session.getAttribute("currUser")).thenReturn(owner);
+        when(taskRepository.searchByTitleOrDescriptionAndUserId("nonexistent", owner.getId()))
                 .thenReturn(Collections.emptyList());
 
-        List<TaskResponseDto> result = taskService.searchTask("nonexistent");
+        List<TaskResponseDto> result = taskService.searchTask("nonexistent", session);
 
         assertTrue(result.isEmpty());
-        verify(taskRepository).searchByTitleOrDescription("nonexistent");
+        verify(taskRepository).searchByTitleOrDescriptionAndUserId("nonexistent", owner.getId());
     }
 
     @Test
     void shouldReturnEmptyList_WhenQueryIsNull() {
-        when(taskRepository.searchByTitleOrDescription(null))
-                .thenReturn(Collections.emptyList());
+        User owner = createTestUser();
+        owner.setId(1L);
 
-        List<TaskResponseDto> result = taskService.searchTask(null);
+        when(session.getAttribute("currUser")).thenReturn(owner);
+        List<TaskResponseDto> result = taskService.searchTask(null, session);
 
         assertTrue(result.isEmpty());
-        verify(taskRepository).searchByTitleOrDescription(null);
+        verify(taskRepository, never()).searchByTitleOrDescriptionAndUserId(any(), anyLong());
     }
 
     @Test
     void shouldReturnEmptyList_WhenQueryIsEmpty() {
-        when(taskRepository.searchByTitleOrDescription("")).thenReturn(Collections.emptyList());
+        User owner = createTestUser();
+        owner.setId(1L);
 
-        List<TaskResponseDto> result = taskService.searchTask("");
+        when(session.getAttribute("currUser")).thenReturn(owner);
+        List<TaskResponseDto> result = taskService.searchTask("", session);
 
         assertTrue(result.isEmpty());
-        verify(taskRepository).searchByTitleOrDescription("");
+        verify(taskRepository, never()).searchByTitleOrDescriptionAndUserId(any(), anyLong());
     }
+
+
+    @Test
+    void viewTaskById_nonOwner_throwsResourceNotFound() {
+        User owner = createTestUser();
+        owner.setId(2L);
+        Task existingTask = Task.builder()
+                .id(10L)
+                .title("Owner Task")
+                .description("Secret")
+                .status(Status.PENDING)
+                .user(owner)
+                .build();
+
+        when(taskRepository.findById(10L)).thenReturn(Optional.of(existingTask));
+
+        User currentUser = createTestUser();
+        currentUser.setId(1L);
+        when(session.getAttribute("currUser")).thenReturn(currentUser);
+
+        assertThrows(ResourceNotFoundException.class, () -> taskService.viewTaskById(10L, session));
+
+        verify(taskRepository).findById(10L);
+    }
+
+    @Test
+    void deleteTask_nonOwner_throwsResourceNotFound() {
+        User owner = createTestUser();
+        owner.setId(2L);
+        Task existingTask = new Task(5L, "T", "D", Status.PENDING, owner);
+        when(taskRepository.findById(5L)).thenReturn(Optional.of(existingTask));
+
+        User currentUser = createTestUser();
+        currentUser.setId(1L);
+        when(session.getAttribute("currUser")).thenReturn(currentUser);
+
+        assertThrows(ResourceNotFoundException.class, () -> taskService.deleteTask(5L, session));
+        verify(taskRepository).findById(5L);
+        verify(taskRepository, never()).delete(any());
+    }
+
+    @Test
+    void searchTask_onlyReturnsTasksForCurrentUser() {
+        User owner = createTestUser();
+        owner.setId(1L);
+
+        Task ownedTask = new Task("TitleX", "Desc", Status.DONE, owner);
+
+        when(session.getAttribute("currUser")).thenReturn(owner);
+        when(taskRepository.searchByTitleOrDescriptionAndUserId("Title", owner.getId()))
+                .thenReturn(List.of(ownedTask));
+
+        List<TaskResponseDto> results = taskService.searchTask("Title", session);
+
+        assertEquals(1, results.size());
+        assertEquals("TitleX", results.get(0).getTitle());
+
+        verify(taskRepository).searchByTitleOrDescriptionAndUserId("Title", owner.getId());
+    }
+
+    @Test
+    void edit_taskTitle_nonOwner_throwsResourceNotFoundAndDoesNotSave() {
+        User owner = createTestUser();
+        owner.setId(2L);
+        Task existingTask = new Task(7L, "Old Title", "Desc", Status.PENDING, owner);
+
+        when(taskRepository.findById(7L)).thenReturn(Optional.of(existingTask));
+
+        User current = createTestUser();
+        current.setId(1L);
+        when(session.getAttribute("currUser")).thenReturn(current);
+
+        TaskRequestDto dto = new TaskRequestDto();
+        dto.setTitle("New Title");
+
+        assertThrows(ResourceNotFoundException.class, () -> taskService.edit_taskTitle(dto, 7L, session));
+
+        verify(taskRepository).findById(7L);
+        verify(taskRepository, never()).save(any());
+    }
+
+    @Test
+    void edit_taskTitle_owner_succeeds() {
+        User owner = createTestUser();
+        owner.setId(1L);
+        Task existingTask = new Task(7L, "Old Title", "Desc", Status.PENDING, owner);
+
+        when(taskRepository.findById(7L)).thenReturn(Optional.of(existingTask));
+        when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(session.getAttribute("currUser")).thenReturn(owner);
+
+        TaskRequestDto dto = new TaskRequestDto();
+        dto.setTitle("New Title");
+
+        String res = taskService.edit_taskTitle(dto, 7L, session);
+
+        assertEquals("Task updated sucessfully", res);
+        verify(taskRepository).save(existingTask);
+        assertEquals("New Title", existingTask.getTitle());
+    }
+
+    @Test
+    void edit_taskDescription_nonOwner_throwsResourceNotFoundAndDoesNotSave() {
+        User owner = createTestUser();
+        owner.setId(3L);
+        Task existingTask = new Task(8L, "Title", "Old desc", Status.PENDING, owner);
+
+        when(taskRepository.findById(8L)).thenReturn(Optional.of(existingTask));
+
+        User current = createTestUser();
+        current.setId(1L);
+        when(session.getAttribute("currUser")).thenReturn(current);
+
+        TaskRequestDto dto = new TaskRequestDto();
+        dto.setDescription("New desc");
+
+        assertThrows(ResourceNotFoundException.class, () -> taskService.edit_taskDescription(dto, 8L, session));
+
+        verify(taskRepository).findById(8L);
+        verify(taskRepository, never()).save(any());
+    }
+
+    @Test
+    void edit_taskDescription_owner_succeeds() {
+        User owner = createTestUser();
+        owner.setId(1L);
+        Task existingTask = new Task(8L, "Title", "Old desc", Status.PENDING, owner);
+
+        when(taskRepository.findById(8L)).thenReturn(Optional.of(existingTask));
+        when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(session.getAttribute("currUser")).thenReturn(owner);
+
+        TaskRequestDto dto = new TaskRequestDto();
+        dto.setDescription("New desc");
+
+        String res = taskService.edit_taskDescription(dto, 8L, session);
+
+        assertEquals("Task updated sucessfully", res);
+        verify(taskRepository).save(existingTask);
+        assertEquals("New desc", existingTask.getDescription());
+    }
+
+    @Test
+    void updateTaskStatus_nonOwner_throwsResourceNotFoundAndDoesNotSave() {
+        User owner = createTestUser();
+        owner.setId(4L);
+        Task existingTask = new Task(9L, "Title", "Desc", Status.PENDING, owner);
+
+        when(taskRepository.findById(9L)).thenReturn(Optional.of(existingTask));
+
+        User current = createTestUser();
+        current.setId(1L);
+        when(session.getAttribute("currUser")).thenReturn(current);
+
+        TaskRequestDto dto = new TaskRequestDto();
+        dto.setStatus("DONE");
+
+        assertThrows(ResourceNotFoundException.class, () -> taskService.updateTaskStatus(dto, 9L, session));
+
+        verify(taskRepository).findById(9L);
+        verify(taskRepository, never()).save(any());
+    }
+
+
+    @Test
+    void viewTaskByStatus_returnsOnlyCurrentUserTasks() {
+        User owner = createTestUser();
+        owner.setId(1L);
+
+        Task t1 = new Task(11L, "T1", "D1", Status.DONE, owner);
+
+        when(session.getAttribute("currUser")).thenReturn(owner);
+        when(taskRepository.findAllByUserIdAndStatus(eq(owner.getId()), eq(Status.DONE)))
+                .thenReturn(List.of(t1));
+
+        List<TaskResponseDto> results = taskService.viewTaskByStatus("DONE", session);
+
+        assertEquals(1, results.size(), "Expected exactly one result for the current user's DONE tasks");
+        assertEquals("T1", results.get(0).getTitle());
+        assertEquals("D1", results.get(0).getDescription());
+        assertEquals(Status.DONE, results.get(0).getStatus());
+
+        verify(taskRepository).findAllByUserIdAndStatus(eq(owner.getId()), eq(Status.DONE));
+    }
+
 }

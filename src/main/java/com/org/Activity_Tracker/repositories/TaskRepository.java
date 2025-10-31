@@ -16,10 +16,19 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     @Query("""
         SELECT t FROM Task t
-        WHERE LOWER(t.title) LIKE LOWER(CONCAT('%', :text, '%'))
-           OR LOWER(t.description) LIKE LOWER(CONCAT('%', :text, '%'))
+        WHERE (LOWER(t.title) LIKE LOWER(CONCAT('%', :text, '%'))
+           OR LOWER(t.description) LIKE LOWER(CONCAT('%', :text, '%')))
+          AND t.user.id = :userId
         """)
-    List<Task> searchByTitleOrDescription(@Param("text") String text);
+    List<Task> searchByTitleOrDescriptionAndUserId(@Param("text") String text, @Param("userId") Long userId);
+
+    @Query("""
+        SELECT t FROM Task t
+        WHERE t.user.id = :userId
+          AND t.status = :status
+        """)
+    List<Task> findAllByUserIdAndStatus(@Param("userId") Long userId, @Param("status") Status status);
+
 
 //    @Query(value= "SELECT * FROM tasks WHERE title LIKE %:question% OR description LIKE %:question%")
 //    Optional<List<Task>> findTaskBySearch(String question);

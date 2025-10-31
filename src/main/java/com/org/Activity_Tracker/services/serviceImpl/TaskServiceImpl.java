@@ -2,17 +2,15 @@ package com.org.Activity_Tracker.services.serviceImpl;
 
 import com.org.Activity_Tracker.entities.Task;
 import com.org.Activity_Tracker.entities.User;
+import com.org.Activity_Tracker.enums.Status;
 import com.org.Activity_Tracker.exceptions.ResourceNotFoundException;
 import com.org.Activity_Tracker.exceptions.UserNotFoundException;
 import com.org.Activity_Tracker.pojos.TaskRequestDto;
 import com.org.Activity_Tracker.pojos.TaskResponseDto;
 import com.org.Activity_Tracker.repositories.TaskRepository;
 import com.org.Activity_Tracker.services.TaskService;
-import com.org.Activity_Tracker.utils.ResponseManager;
-import com.org.Activity_Tracker.enums.Status;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
@@ -72,11 +70,9 @@ public class TaskServiceImpl implements TaskService {
 
     //    ===========================VIEW TASK BY ID=============================================
     @Override
-    public Object viewTaskById(Long task_id) {
+    public Object viewTaskById(Long task_id, HttpSession session) {
 
-        Task task =  taskRepository.findById(task_id)
-                .orElseThrow(()-> new ResourceNotFoundException(
-                        "Task not found", "Provide a valid taskId"));
+        Task task = findTaskForCurrentUser(task_id, session);
 
         return TaskResponseDto.builder()
                 .title(task.getTitle())
@@ -87,30 +83,21 @@ public class TaskServiceImpl implements TaskService {
 
 //    ===========================EDIT TASK TITLE=============================================
 
-    public String edit_taskTitle(TaskRequestDto request, Long task_id){
-
-        Task task = taskRepository.findById(task_id)
-                .orElseThrow(()-> new ResourceNotFoundException(
-                        "Task not found", "Provide a valid task Id"));
-
+    public String edit_taskTitle(TaskRequestDto request, Long task_id, HttpSession session){
+        Task task = findTaskForCurrentUser(task_id, session);
         task.setTitle(request.getTitle());
         taskRepository.save(task);
-
         return "Task updated sucessfully";
     }
 
 
     //    ===========================EDIT TASK DESCRIPTION=============================================
 
-    public String edit_taskDescription(TaskRequestDto request, Long task_id){
-
-        Task task = taskRepository.findById(task_id)
-                .orElseThrow(()-> new ResourceNotFoundException(
-                        "Task not found", "Provide a valid task Id"));
-
+    @Override
+    public String edit_taskDescription(TaskRequestDto request, Long task_id, HttpSession session){
+        Task task = findTaskForCurrentUser(task_id, session);
         task.setDescription(request.getDescription());
         taskRepository.save(task);
-
         return "Task updated sucessfully";
     }
 
@@ -118,58 +105,71 @@ public class TaskServiceImpl implements TaskService {
     //    ===========================DELETE TASK=============================================
 
     @Override
-    public String deleteTask(Long task_id) {
-        Task task = taskRepository.findById(task_id)
-                        .orElseThrow(()-> new ResourceNotFoundException(
-                                "Task not found", "Provide a valid task Id"));
+    public String deleteTask(Long task_id, HttpSession session) {
+        Task task = findTaskForCurrentUser(task_id, session);
         taskRepository.delete(task);
-
         return "Task deleted successfully!";
     }
 
 
-    //===========================VIEW TASK BY STATUS=============================================
-
+    @Override
     public List<TaskResponseDto> viewTaskByStatus(String status, HttpSession session){
-        User user = (User) session.getAttribute("currUser");
-        List<Task> tasks = user.getTasks();
+        User user = getSessionUser(session);
+        if (status == null || status.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        Status statusEnum;
+        try {
+            statusEnum = Status.valueOf(status.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return new ArrayList<>();
+        }
+
+        Long userId = user.getId();
+        List<Task> tasks = taskRepository.findAllByUserIdAndStatus(userId, statusEnum);
 
         List<TaskResponseDto> responses = new ArrayList<>();
-        tasks.forEach(task ->{
-            if(task.getStatus().equals(Status.valueOf(status.toUpperCase()))){
+        if (tasks != null) {
+            tasks.forEach(task -> {
                 TaskResponseDto response = TaskResponseDto.builder()
                         .title(task.getTitle())
                         .description(task.getDescription())
                         .status(task.getStatus())
                         .build();
                 responses.add(response);
-            }
-        });
+            });
+        }
         return responses;
     }
 
 
     //    ===========================UPDATE TASK STATUS=============================================
     @Override
-//    @Transactional
-    public String updateTaskStatus(TaskRequestDto request, Long task_id) {
-
-        Task task = taskRepository.findById(task_id)
-                .orElseThrow(()-> new ResourceNotFoundException(
-                        "Task not found", "Provide a valid taskId"));
-
+    public String updateTaskStatus(TaskRequestDto request, Long task_id, HttpSession session) {
+        Task task = findTaskForCurrentUser(task_id, session);
+        if (request.getStatus() == null) {
+            throw new IllegalArgumentException("Status is required");
+        }
         task.setStatus(Status.valueOf(request.getStatus().toUpperCase()));
-        if(request.getStatus().equalsIgnoreCase("done")){
+        if("done".equalsIgnoreCase(request.getStatus())){
             task.setCompletedAt(new Date());
         }
         taskRepository.save(task);
         return "Task status updated successfully";
     }
 
+    @Override
+    public List<TaskResponseDto> searchTask(String query, HttpSession session){
+        User user = getSessionUser(session);
+        Long userId = user.getId();
 
-    public List<TaskResponseDto> searchTask(String query){
+        // null/blank query handling — return empty list (or you could choose to return all user's tasks)
+        if (query == null || query.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
 
-        List<Task> matchingTasks = taskRepository.searchByTitleOrDescription(query);
+        List<Task> matchingTasks = taskRepository.searchByTitleOrDescriptionAndUserId(query, userId);
 
         return matchingTasks.stream()
                 .map(task -> TaskResponseDto.builder()
@@ -179,5 +179,24 @@ public class TaskServiceImpl implements TaskService {
                         .build()
                 )
                 .toList();
+    }
+
+
+
+    private User getSessionUser(HttpSession session){
+        User user = (User) session.getAttribute("currUser");
+        if(user == null) throw new UserNotFoundException("Login required", "No user in session");
+        return user;
+    }
+
+    private Task findTaskForCurrentUser(Long taskId, HttpSession session){
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found", "Provide a valid taskId"));
+
+        User currUser = getSessionUser(session);
+        if (task.getUser() == null || !task.getUser().getId().equals(currUser.getId())) {
+            throw new ResourceNotFoundException("Task not found", "Provide a valid taskId");
+        }
+        return task;
     }
 }
