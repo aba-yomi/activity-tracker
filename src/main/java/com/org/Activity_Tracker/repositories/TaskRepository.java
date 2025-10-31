@@ -29,9 +29,13 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
         """)
     List<Task> findAllByUserIdAndStatus(@Param("userId") Long userId, @Param("status") Status status);
 
+    @Query("""
+    SELECT t FROM Task t
+    WHERE t.user.id = :userId
+    """)
+    List<Task> findAllByUserId(@Param("userId") Long userId);
 
-//    @Query(value= "SELECT * FROM tasks WHERE title LIKE %:question% OR description LIKE %:question%")
-//    Optional<List<Task>> findTaskBySearch(String question);
+
 
 
 

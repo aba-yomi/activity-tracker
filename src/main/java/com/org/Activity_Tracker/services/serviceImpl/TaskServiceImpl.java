@@ -48,25 +48,23 @@ public class TaskServiceImpl implements TaskService {
 
     //    ===========================VIEW ALL TASK=============================================
     @Override
-    public Object viewAllTask(HttpSession session) {
+    public List<TaskResponseDto> viewAllTask(HttpSession session) {
+        User user = getSessionUser(session);
+        Long userId = user.getId();
 
-        User user = (User) session.getAttribute("currUser");
-
-        if(user != null) {
-            List<Task> tasks = user.getTasks();
-            List<TaskResponseDto> taskList = new ArrayList<>();
-            tasks.forEach(task -> {
-
-                TaskResponseDto response = TaskResponseDto.builder()
-                        .title(task.getTitle())
-                        .description(task.getDescription())
-                        .status(task.getStatus())
-                        .build();
-                taskList.add(response);
-            });
+        List<Task> tasks = taskRepository.findAllByUserId(userId);
+        List<TaskResponseDto> taskList = new ArrayList<>();
+        if (tasks == null || tasks.isEmpty()) {
             return taskList;
         }
-        throw new UserNotFoundException("Login to view your tasks", "No user in session");
+        for (Task task : tasks) {
+            taskList.add(TaskResponseDto.builder()
+                    .title(task.getTitle())
+                    .description(task.getDescription())
+                    .status(task.getStatus())
+                    .build());
+        }
+        return taskList;
     }
 
     //    ===========================VIEW TASK BY ID=============================================
