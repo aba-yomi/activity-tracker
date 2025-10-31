@@ -414,4 +414,21 @@ class TaskServiceImplTest {
         verify(taskRepository).findAllByUserIdAndStatus(eq(owner.getId()), eq(Status.DONE));
     }
 
+
+    @Test
+    void viewAllTaskTest() {
+        User owner = createTestUser();
+        owner.setId(1L);
+        when(session.getAttribute("currUser")).thenReturn(owner);
+
+        Task t = new Task(1L, "T", "D", Status.PENDING, owner);
+        when(taskRepository.findAllByUserId(owner.getId())).thenReturn(List.of(t));
+
+        List<TaskResponseDto> result = taskService.viewAllTask(session);
+
+        assertEquals(1, result.size());
+        assertEquals("T", result.get(0).getTitle());
+        verify(taskRepository).findAllByUserId(owner.getId());
+    }
+
 }
