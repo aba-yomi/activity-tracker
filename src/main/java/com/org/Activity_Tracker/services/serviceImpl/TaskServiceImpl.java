@@ -4,6 +4,7 @@ import com.org.Activity_Tracker.entities.Task;
 import com.org.Activity_Tracker.entities.User;
 import com.org.Activity_Tracker.enums.Status;
 import com.org.Activity_Tracker.exceptions.ResourceNotFoundException;
+import com.org.Activity_Tracker.exceptions.TypeMismatchException;
 import com.org.Activity_Tracker.exceptions.UserNotFoundException;
 import com.org.Activity_Tracker.pojos.TaskRequestDto;
 import com.org.Activity_Tracker.pojos.TaskResponseDto;
@@ -148,15 +149,20 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public String updateTaskStatus(TaskRequestDto request, Long task_id, HttpSession session) {
         Task task = findTaskForCurrentUser(task_id, session);
-        if (request.getStatus() == null) {
-            throw new IllegalArgumentException("Status is required");
+        if (request.getStatus() == null || request.getStatus().isEmpty()) {
+            throw new TypeMismatchException("Status is required");
         }
-        task.setStatus(Status.valueOf(request.getStatus().toUpperCase()));
-        if("done".equalsIgnoreCase(request.getStatus())){
-            task.setCompletedAt(new Date());
+        try{
+            task.setStatus(Status.valueOf(request.getStatus().toUpperCase()));
+            if("done".equalsIgnoreCase(request.getStatus())){
+                task.setCompletedAt(new Date());
+            }
+            taskRepository.save(task);
+            return "Task status updated successfully";
+        }catch (IllegalArgumentException ex){
+            throw new TypeMismatchException("Invalid Status passed");
         }
-        taskRepository.save(task);
-        return "Task status updated successfully";
+
     }
 
     @Override

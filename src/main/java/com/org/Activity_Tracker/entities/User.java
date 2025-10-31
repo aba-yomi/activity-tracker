@@ -32,7 +32,7 @@ public class User {
     @Column(name="password", nullable = false)
     private String password;
 
-    @Column(name="gender", nullable = false)
+    @Column(name="gender")
     @Enumerated(EnumType.STRING)
     private Gender gender;
 

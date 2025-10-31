@@ -3,10 +3,7 @@ package com.org.Activity_Tracker.pojos;
 
 import lombok.*;
 
-import javax.validation.constraints.Email;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
+import javax.validation.constraints.*;
 
 
 @Getter
@@ -28,6 +25,8 @@ public class RegistrationRequest {
     private String password;
 
     @NotNull(message = "Please specify your gender")
+    @Pattern(regexp = "MALE|FEMALE", flags = Pattern.Flag.CASE_INSENSITIVE,
+            message = "Invalid gender. Supported values: MALE, FEMALE")
     private String gender;
 
 

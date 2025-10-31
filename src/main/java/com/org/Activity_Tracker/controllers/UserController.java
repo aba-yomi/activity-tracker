@@ -25,13 +25,13 @@ public class UserController {
 
     @PostMapping("/register")
     public ApiResponse<Object> register_user(@Valid @RequestBody RegistrationRequest request){
-        User user = new User();
-        user.setUsername(request.getUsername());
-        user.setPassword(request.getPassword());
-        user.setEmail(request.getEmail());
-        user.setGender(Gender.valueOf(request.getGender()));
-        String response = userService.createUser(user);
-        return new ResponseManager().success(response, HttpStatus.CREATED);
+            User user = new User();
+            user.setUsername(request.getUsername());
+            user.setPassword(request.getPassword());
+            user.setEmail(request.getEmail());
+            user.setGender(Gender.valueOf(request.getGender()));
+            String response = userService.createUser(user);
+            return new ResponseManager().success(response, HttpStatus.CREATED);
     }
 
 }

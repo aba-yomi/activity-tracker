@@ -18,7 +18,7 @@ public class ResponseManager {
 
     public ApiResponse<Object> failure(Object errorMsg, HttpStatus status){
 
-        return new ApiResponse<>(errorMsg, false, null, status);
+        return new ApiResponse<>(errorMsg, false, status, null);
     }
 
 }
