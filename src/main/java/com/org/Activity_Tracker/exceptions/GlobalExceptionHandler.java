@@ -37,6 +37,18 @@ public class GlobalExceptionHandler {
         return new ResponseEntity(errorMsg, HttpStatus.NOT_FOUND);
     }
 
+    @ExceptionHandler(TypeMismatchException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    protected ResponseEntity<?> typeMismatchException(TypeMismatchException ex){
+
+        GlobalErrorMessage errorMsg = new GlobalErrorMessage();
+        errorMsg.setMessage(ex.getMessage());
+        errorMsg.setDebugMessage("Incorrect field value");
+        errorMsg.setStatus(HttpStatus.BAD_REQUEST);
+
+        return new ResponseEntity(errorMsg, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     protected ResponseEntity<?> customValidationExceptionHandler(MethodArgumentNotValidException ex){

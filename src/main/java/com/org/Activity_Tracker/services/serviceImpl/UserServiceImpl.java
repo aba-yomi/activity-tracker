@@ -5,14 +5,12 @@ import com.org.Activity_Tracker.entities.User;
 import com.org.Activity_Tracker.exceptions.ResourceNotFoundException;
 import com.org.Activity_Tracker.exceptions.UserNotFoundException;
 import com.org.Activity_Tracker.pojos.LoginRequest;
-import com.org.Activity_Tracker.pojos.RegistrationRequest;
 import com.org.Activity_Tracker.repositories.UserRepository;
 import com.org.Activity_Tracker.services.UserService;
-import com.org.Activity_Tracker.enums.Gender;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import javax.servlet.http.HttpSession;
 import java.util.Optional;
 
@@ -24,10 +22,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    /**
-     * Create/register a user. This will encode the password before saving.
-     * Replace or adapt to your existing createUser/register method signature.
-     */
+
     @Override
     public String createUser(User user) {
         if (userRepository.existsByEmail(user.getEmail())) {
