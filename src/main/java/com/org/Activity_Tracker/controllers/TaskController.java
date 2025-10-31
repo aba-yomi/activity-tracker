@@ -8,7 +8,6 @@ import com.org.Activity_Tracker.services.TaskService;
 import com.org.Activity_Tracker.utils.ResponseManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
@@ -45,7 +44,7 @@ public class TaskController {
 
     @GetMapping("/view-task-by-id/{task_id}")
     public ApiResponse<Object> viewTaskById(@PathVariable Long task_id){
-        Object response = taskService.viewTaskById(task_id);
+        Object response = taskService.viewTaskById(task_id, session);
         return new ResponseManager().success(response, HttpStatus.FOUND);
     }
 
@@ -54,7 +53,7 @@ public class TaskController {
 
     @DeleteMapping("/delete/{task_id}")
     public ApiResponse<Object> deleteTask(@PathVariable Long task_id){
-        String response = taskService.deleteTask(task_id);
+        String response = taskService.deleteTask(task_id, session);
         return new ResponseManager().success(response, HttpStatus.OK);
     }
 
@@ -70,27 +69,27 @@ public class TaskController {
     //==========================EDIT TASK TITLE=======================================================
     @PatchMapping("/edit-title/{task_id}")
     public ApiResponse<Object> edit_taskTitle(@Valid @RequestBody TaskRequestDto request, @PathVariable Long task_id){
-        String response = taskService.edit_taskTitle(request, task_id);
+        String response = taskService.edit_taskTitle(request, task_id, session);
         return new ResponseManager().success(response, HttpStatus.OK);
     }
 
     //==========================EDIT TASK DESCRIPTION=======================================================
     @PatchMapping("/edit-description/{task_id}")
     public ApiResponse<Object> edit_taskDescription(@Valid @RequestBody TaskRequestDto request, @PathVariable Long task_id){
-        String response = taskService.edit_taskDescription(request, task_id);
+        String response = taskService.edit_taskDescription(request, task_id, session);
         return new ResponseManager().success(response, HttpStatus.OK);
     }
 
     //==========================UPDATE TASK STATUS=======================================================
     @PatchMapping("/update-status/{task_id}")
     public ApiResponse<Object> updateStatus(@Valid @RequestBody TaskRequestDto request, @PathVariable Long task_id){
-        String response = taskService.updateTaskStatus(request, task_id);
+        String response = taskService.updateTaskStatus(request, task_id, session);
         return new ResponseManager().success(response, HttpStatus.OK);
     }
 
     @GetMapping("/search")
     public ApiResponse<Object> searchTask(@RequestParam String query){
-        List<TaskResponseDto> results = taskService.searchTask(query);
+        List<TaskResponseDto> results = taskService.searchTask(query, session);
         return new ResponseManager().success(results, HttpStatus.OK);
     }
 

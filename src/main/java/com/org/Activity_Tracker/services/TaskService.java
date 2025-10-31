@@ -13,17 +13,17 @@ public interface TaskService {
 
     Object viewAllTask(HttpSession session);
 
-    Object viewTaskById(Long task_id);
+    Object viewTaskById(Long task_id, HttpSession session);
 
-    String deleteTask(Long task_id);
+    String deleteTask(Long task_id, HttpSession session);
 
-    String edit_taskTitle(TaskRequestDto request, Long task_id);
+    String edit_taskTitle(TaskRequestDto request, Long task_id, HttpSession session);
 
-    String edit_taskDescription(TaskRequestDto request, Long task_id);
+    String edit_taskDescription(TaskRequestDto request, Long task_id, HttpSession session);
 
     List<TaskResponseDto> viewTaskByStatus(String status, HttpSession session);
 
-    String updateTaskStatus (TaskRequestDto request, Long task_id);
+    String updateTaskStatus (TaskRequestDto request, Long task_id, HttpSession session);
 
-    List<TaskResponseDto> searchTask (String query);
+    List<TaskResponseDto> searchTask (String query, HttpSession session);
 }
